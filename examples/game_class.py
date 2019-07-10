@@ -2,10 +2,10 @@ import fgarcade as ge
 from fgarcade.enums import Command
 from arcade import SpriteList
 import fgarcade.game.platforms
-from arcade import check_for_collision
 import arcade
 from fgarcade import Player
-
+from arcade import check_for_collision_with_list
+from arcade import AnimatedTimeSprite
 
 class Player(ge.Player):
     is_kicking = False
@@ -41,6 +41,8 @@ class Game(ge.Platformer):
     player_initial_tile = 4, 1
     player_class = Player
     game_over = False
+    score = 0
+    timer = 0.0
     def init_world(self):
         self.world_color = 'yellow'
         self.player_initial_position = (5, 1.5)
@@ -65,40 +67,63 @@ class Game(ge.Platformer):
         self.create_tower(12, coords=(100, 0))
 
     def init_enemies(self):
-
-        self.enemies = SpriteList(is_static=True)
+        
+        self.enemies_list = SpriteList(is_static=True)
         def create_enemy(x,y):
-            enemy = self.create_object('enemy/enemyWalking_1',(x,y), role=self.enemies)
-            self.enemies.append(enemy)
+            enemy = self.create_object('other/spikes/spikes-high',(x,y))
+            self.enemies_list.append(enemy)
         create_enemy(5,1)
+        create_enemy(6,1)
+        
+    def init_flag(self):
+        self.flags_list = SpriteList(is_static=True)
+        def create_flag(x,y):
+            flag = self.create_object('other/flag/flagRed_up',(x,y))
+            self.flags_list.append(flag)
+        create_flag(8,1)
+    
+    def init_coins(self):
+        self.coins_list = SpriteList()
+        def create_coin(x,y):
+            coin = self.create_object('other/items/yellowJewel',(x,y))
+            self.coins_list.append(coin)
+        create_coin(7,4)
+        create_coin(3,4)
 
+    
     def draw_elements(self):
         super().draw_elements()
-        self.enemies.draw()
-
-    def update_enemy(self,dt):
+        self.enemies_list.draw()
+        output = f"Pontos: {self.score}"
+        arcade.draw_text(output,640,550,arcade.color.BLACK,20)
+        minutes = int(self.timer)//60
+        seconds = int(self.timer)% 60
+        output_timer = f"Tempo: {minutes:02d}:{seconds:02d}"
+        arcade.draw_text(output_timer,620,570,arcade.color.BLACK,20,font_name="Arial Black")
+   
+    def update_collision(self,dt):
         if not self.game_over:
-            self.enemies.update()
-            self.physics_engine.update()
-        if len(arcade.check_for_collision_with_list(self.player, self.enemies)) > 0:
-            print("morreu")
-
+            self.enemies_list.update()
+            if len(check_for_collision_with_list(self.player, self.enemies_list)) > 0:
+                pass
+            if len(check_for_collision_with_list(self.player, self.flags_list)) > 0:
+                pass
+            hit_coin = check_for_collision_with_list(self.player, self.coins_list)
+            for coin in hit_coin:
+                coin.remove_from_sprite_lists()
+                self.score += 1
+            
     def update(self, dt):
         super().update(dt)
-        self.update_enemy(dt)
-        self.update_clock(dt)
-
-    def death(self):
-
-        self.dead = update_actions()
-
-    def init_items(self):
-        pass
+        self.update_collision(dt)   
+        self.timer += dt
+        
     def init(self):
         self.init_world()
-        self.init_items()
+        self.init_flag()
         self.init_enemies()
-        #self.update_enemy()
+        self.init_coins()
+    
 
 if __name__ == "__main__":
     Game().run()
