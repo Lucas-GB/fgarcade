@@ -7,7 +7,8 @@ from fgarcade import Player
 from arcade import check_for_collision_with_list
 from arcade import AnimatedTimeSprite
 from fgarcade.game.player import AnimatedWalkingSprite
-
+from time import sleep
+'''
 class Player(ge.Player):
     is_kicking = False
     _not_kicking_texture = None
@@ -32,19 +33,20 @@ class Player(ge.Player):
         elif self._not_kicking_texture is not None:
             self._texture = self._not_kicking_texture
             self._not_kicking_texture = None
-
+'''
 
 class Game(ge.Platformer):
     """
     Simple platformer example
     """
-    title = 'Simple platformer'
-    player_initial_tile = 4, 1
+    title = 'KiJogão'
+    player_initial_tile = 4 , 1
     player_class = Player
     game_over = False
     score = 0
-    timer = 0.0
     life = 0
+    output_timer = 0.0
+    timer = 0.0
     def init_world(self):
         self.world_color = 'yellow'
         self.player_initial_position = (5, 1.5)
@@ -77,7 +79,7 @@ class Game(ge.Platformer):
         create_enemy(7,1)
         create_enemy(45,1)
         create_enemy(48,1)
-        create_enemy(22,3)
+        create_enemy(22,2.9)
         create_enemy(54,1)
         create_enemy(57,1)
         create_enemy(60,1)
@@ -85,6 +87,8 @@ class Game(ge.Platformer):
         create_enemy(77,2.9)
         create_enemy(80,2.9)
         create_enemy(83,2.9)
+        for i in range(100):
+            create_enemy(i,-3)
         
         
     def init_flag(self):
@@ -92,7 +96,7 @@ class Game(ge.Platformer):
         def create_flag(x,y):
             flag = self.create_object('other/flag/flagRed_up',(x,y))
             self.flags_list.append(flag)
-        create_flag(98,1)
+        create_flag(94,1)
     
     def init_coins(self):
         self.coins_list = SpriteList()
@@ -117,36 +121,71 @@ class Game(ge.Platformer):
         create_coin(80,7)
         create_coin(81,3)       
 
-    
     def draw_elements(self):
         super().draw_elements()
         self.enemies_list.draw()
-        output = f"Pontos: {self.score}"
-        arcade.draw_text(output,640,550,arcade.color.BLACK,20)
-        minutes = int(self.timer) // 60
-        seconds = int(self.timer) % 60
-        output_timer = f"Tempo: {minutes:02d}:{seconds:02d}"
-        arcade.draw_text(output_timer,620,570,arcade.color.BLACK,20)
-        output_life = f"Vidas: {self.life}"
-        arcade.draw_text(output_life,640,530,arcade.color.BLACK,20)
+        
+        posicaox = self.viewport_horizontal_start + 615
+        posicaoy = self.viewport_vertical_start +540
 
+        output = f"Pontos: {self.score}"
+        arcade.draw_text(output,posicaox ,posicaoy - 20,arcade.color.BLACK,20)
+        
+        minutes = int(self.timer) // 60
+        seconds = int(self.timer) % 60 
+        self.output_timer = f"Tempo: {minutes:02d}:{seconds:02d}"
+        arcade.draw_text(self.output_timer,posicaox,posicaoy,arcade.color.BLACK,20)
+        
+        output_life = f"Vidas: {self.life}"
+        arcade.draw_text(output_life,posicaox,posicaoy + 20,arcade.color.BLACK,20)
+
+        if self.game_over:
+            output_game_over = "Game Over"
+            arcade.draw_text(output_game_over,posicaox - 240,posicaoy -300,arcade.color.BLACK,20)
+        
+            
     def update_collision(self,dt):
         if not self.game_over:
             self.enemies_list.update()
+            
             if len(check_for_collision_with_list(self.player, self.enemies_list)) > 0:
-                self.score = 0
-                print('morreu')
-                self.life -= 1
-                #voltar para o a posição de inicio
+                if self.life > 0:
+                    self.score = 0
+                    self.life -= 1
+                    super().player.player_initial_tile = 4, 1
+                    super().physics_engine
+                else:
+                    self.game_over = True
+                    self.timerend = self.output_timer
+                    arcade.draw_text(self.timerend, self.viewport_horizontal_start - 240,self.viewport_vertical_start -200 ,arcade.color.BLACK,20)
+                    print(self.timerend)
             if len(check_for_collision_with_list(self.player, self.flags_list)) > 0:
-                pass
-                #passar de fase aparecer na tela stats
+
+                self.timerend = self.output_timer 
+                output_win = "You Win"
+                arcade.draw_text(output_win, self.viewport_horizontal_start - 240,self.viewport_vertical_start -200 ,arcade.color.BLACK,20)
+                #aparecer timer, com o tempo e as vidas o timer tambem
+                arcade.draw_text(self.timerend, self.viewport_horizontal_start - 240,self.viewport_vertical_start - 200,arcade.color.BLACK,20)
+                print(self.timerend)
+                
+                if self.life == 3 :
+                    arcade.draw_text("SS", self.viewport_horizontal_start - 240,self.viewport_vertical_start - 200,arcade.color.BLACK,20)
+                elif self.life == 2: 
+                    arcade.draw_text("Ms", self.viewport_horizontal_start - 240,self.viewport_vertical_start - 200,arcade.color.BLACK,20)
+                elif self.life <= 1:
+                    arcade.draw_text("MM", self.viewport_horizontal_start - 240,self.viewport_vertical_start - 200,arcade.color.BLACK,20)
+    
             hit_coin = check_for_collision_with_list(self.player, self.coins_list)
+            
             for coin in hit_coin:
                 coin.remove_from_sprite_lists()
                 self.score += 1
-                if self.score % 10 == 0:
+                if self.score % 5 == 0:
                     self.life += 1
+       
+        if self.game_over:
+            self.draw_elements()
+
 
     def update(self, dt):
         super().update(dt)
