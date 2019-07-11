@@ -149,6 +149,8 @@ class Player(AnimatedWalkingSprite):
         It must pass the PhysicsEngine object with a can_jump method that tests
         if jumps are allowed or not.
         """
+        if physics == None :
+            physics_engine = record(can_jump=lambda: True, update=lambda *args: None)
 
         change_x = self.change_x
         change_y = self.change_y
